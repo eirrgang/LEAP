@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10"]
+requires = ["scikit-build-core>=1.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -16,18 +16,64 @@ keywords = [
     "Machine Learning", "ML", "AI", "Computed Tomography", "CT",
     "Differentiable Project", "Forward Project", "Back Project"
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies = [
     "imageio",
     "matplotlib",
     "numpy",
     "scipy",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+torch = ["torch"]
+
+[project.urls]
+Homepage = "https://github.com/LLNL/LEAP"
+Repository = "https://github.com/LLNL/LEAP"
+Documentation = "https://leapct.readthedocs.io/"
+Issues = "https://github.com/LLNL/LEAP/issues"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 cmake.version = ">=3.23"
 metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.inclusion-mode = "explicit"
+sdist.include = [
+    "src/**",
+    "cmake/**",
+    "scripts/**",
+    "docs/hipify-strategy.md",
+    "third_party/hipify_torch/**",
+    "CMakeLists.txt",
+    "pyproject.toml",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+]
+sdist.exclude = [
+    "demo_leapctype/**",
+    "demo_leaptorch/**",
+    "documentation/**",
+    "VAM/**",
+    "results/**",
+    "unitTests/**",
+    "utils/**",
+    "etc/**",
+    "setup_old.py",
+    "setup_ctype.py",
+    "setup_AMD.py",
+    "src/cpu_CMakeLists.txt",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/*_backup",
+    "**/*_backup_working",
+]
 
 wheel.packages = ["src/leap_filter_sequence", "src/leap_preprocessing_algorithms", "src/leapctype", "src/leaptorch"]
 wheel.py-api = "py3"
