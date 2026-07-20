@@ -7,32 +7,36 @@ project(leapct LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find a default GPU accelerator language.
-set(_default_accelerator_type "None")
 include(CheckLanguage)
 check_language(HIP)
-if(CMAKE_HIP_COMPILER)
-    set(_default_accelerator_type "AMD")
-endif()
 check_language(CUDA)
-if(CMAKE_CUDA_COMPILER)
-    set(_default_accelerator_type "NVIDIA")
+
+if(NOT DEFINED LEAP_GPU)
+    if(CMAKE_HIP_COMPILER AND CMAKE_CUDA_COMPILER)
+        message(FATAL_ERROR "Both HIP and CUDA compilers were detected. Specify LEAP_GPU explicitly as AMD, NVIDIA, or None.")
+    elseif(CMAKE_CUDA_COMPILER)
+        set(LEAP_GPU "NVIDIA")
+    elseif(CMAKE_HIP_COMPILER)
+        set(LEAP_GPU "AMD")
+    else()
+        set(LEAP_GPU "None")
+    endif()
 endif()
 
-set(LEAP_GPU "$_default_accelerator_type" CACHE STRING "GPU acceleration type")
-unset(_default_accelerator_type)
-
+set(LEAP_GPU "${LEAP_GPU}" CACHE STRING "GPU acceleration type" FORCE)
 set_property(CACHE LEAP_GPU PROPERTY STRINGS "NVIDIA" "AMD" "None")
-# Extract "STRINGS" property of the parameter
-get_property(OPT_STRINGS CACHE LEAP_GPU PROPERTY STRINGS)
-# Check that value of the parameter is inside "STRINGS" list.
-if (NOT LEAP_GPU IN_LIST OPT_STRINGS)
-  message(FATAL_ERROR "Wrong value of the parameter 'LEAP_GPU': ${LEAP_GPU}")
+string(TOUPPER "${LEAP_GPU}" LEAP_GPU)
+
+set(_leap_gpu_options "NVIDIA" "AMD" "NONE")
+if (NOT LEAP_GPU IN_LIST _leap_gpu_options)
+  message(FATAL_ERROR "Wrong value of the parameter 'LEAP_GPU': ${LEAP_GPU}. Expected NVIDIA, AMD, or None.")
 endif ()
 message(STATUS "LEAP_GPU selected accelerator type ${LEAP_GPU}")
 
-string(TOUPPER "${LEAP_GPU}" LEAP_GPU)
 if (LEAP_GPU STREQUAL "NVIDIA")
+    if(NOT CMAKE_CUDA_COMPILER)
+        message(FATAL_ERROR "LEAP_GPU=NVIDIA requires a CUDA compiler")
+    endif()
     # To minimize binary size and compile time, users are suggested to
     # set the CUDAARCHS environment variable or define the CMake variable CMAKE_CUDA_ARCHITECTURES
     # to "native" if building specifically for the GPU visible to the build environment,
@@ -43,7 +47,6 @@ if (LEAP_GPU STREQUAL "NVIDIA")
     enable_language(CUDA)
     set(LEAP_CUDA ON)
 elseif (LEAP_GPU STREQUAL "AMD")
-    check_language(HIP)
     if(NOT CMAKE_HIP_COMPILER)
         message(FATAL_ERROR "LEAP_GPU=AMD requires a HIP compiler")
     endif()

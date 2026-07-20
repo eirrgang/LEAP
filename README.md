@@ -42,13 +42,16 @@ python -m pip install 'leapct[torch]'
 ### Editable installs for development
 
 For local development, use an editable install. This builds the native library once and
-installs it as package data while leaving the Python sources editable:
+installs it as package data while leaving the Python sources editable. If `LEAP_GPU` is not
+specified, the build probes for available accelerator compilers and selects CUDA or HIP
+only when exactly one is detected. If both CUDA and HIP are detected, the build fails and
+asks you to choose explicitly. Use `LEAP_GPU=None` to force a CPU-only build:
 
 ```bash
 python -m pip install -e . -Ccmake.define.LEAP_GPU=None
 ```
 
-Choose a GPU backend by changing the CMake definition, for example:
+Choose a GPU backend explicitly by changing the CMake definition, for example:
 
 ```bash
 python -m pip install -e . -Ccmake.define.LEAP_GPU=NVIDIA
@@ -60,12 +63,23 @@ python -m pip install -e . -Ccmake.define.LEAP_GPU=AMD
 Build a wheel from a checkout with Python's standard build frontend:
 
 ```bash
-python -m build --wheel -Ccmake.define.LEAP_GPU=None .
+python -m build --wheel .
 ```
 
-Use `LEAP_GPU=NVIDIA` or `LEAP_GPU=AMD` for CUDA or ROCm builds. Locally distributed GPU
-wheels should include a PEP 440 local version tag naming the runtime ABI they were built
-against. The helper script does this with `SETUPTOOLS_SCM_PRETEND_VERSION`:
+If `LEAP_GPU` is not specified, the build probes for HIP and CUDA compiler support. The
+build selects the detected accelerator when exactly one is available, selects CPU-only when
+neither is available, and fails as ambiguous when both are available. Specify the backend
+explicitly when you need a particular target:
+
+```bash
+python -m build --wheel -Ccmake.define.LEAP_GPU=None .
+python -m build --wheel -Ccmake.define.LEAP_GPU=NVIDIA .
+python -m build --wheel -Ccmake.define.LEAP_GPU=AMD .
+```
+
+Locally distributed GPU wheels should include a PEP 440 local version tag naming the
+runtime ABI they were built against. The helper script does this with
+`SETUPTOOLS_SCM_PRETEND_VERSION`:
 
 ```bash
 scripts/build-gpu-wheel.sh cu124 NVIDIA
