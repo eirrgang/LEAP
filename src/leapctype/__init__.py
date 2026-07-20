@@ -8,11 +8,9 @@
 ################################################################################
 
 import ctypes
-import fnmatch
 import os
 import sys
 import warnings
-from contextlib import ExitStack
 from importlib.resources import as_file, files
 from pathlib import Path
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -32,14 +30,12 @@ def _load_leap_library(lib_dir=""):
     if _platform == "linux" or _platform == "linux2":
         import readline
         from ctypes import cdll
-        library_pattern = "*leapct*.so"
-        fallback_name = "libleapct.so"
+        library_name = "libleapct.so"
         fallback_build_path = Path("../build/lib/libleapct.so")
         load_library = cdll.LoadLibrary
     elif _platform == "win32":
         from ctypes import windll
-        library_pattern = "*leapct*.dll"
-        fallback_name = "libleapct.dll"
+        library_name = "libleapct.dll"
         fallback_build_path = Path(r"..\win_build\bin\Release\libleapct.dll")
 
         def load_library(path):
@@ -49,8 +45,7 @@ def _load_leap_library(lib_dir=""):
                 return ctypes.CDLL(str(path), winmode=0)
     elif _platform == "darwin":  # Darwin is the name for MacOS in Python's platform module
         from ctypes import cdll
-        library_pattern = "*leapct*.dylib"
-        fallback_name = "libleapct.dylib"
+        library_name = "libleapct.dylib"
         fallback_build_path = Path("../build/lib/libleapct.dylib")
         load_library = cdll.LoadLibrary
     else:
@@ -59,31 +54,21 @@ def _load_leap_library(lib_dir=""):
         return None
 
     if len(lib_dir) > 0:
-        package_dir = Path(lib_dir)
-        library_paths = sorted(package_dir.glob(library_pattern))
-        if not library_paths:
-            library_paths = [package_dir / fallback_name]
-        library_paths.append(package_dir / fallback_build_path)
-        for library_path in library_paths:
-            if library_path.is_file():
-                return load_library(str(library_path))
+        library_path = Path(lib_dir) / library_name
+        if library_path.is_file():
+            return load_library(str(library_path))
         print('Error: could not find LEAP dynamic library at')
-        for library_path in library_paths:
-            print(library_path)
+        print(library_path)
         return None
 
-    package_files = files(__package__)
-    library_resources = sorted(
-        child for child in package_files.iterdir()
-        if fnmatch.fnmatch(child.name, library_pattern)
-    )
-    if not library_resources:
-        library_resources = [package_files / fallback_name]
-    with ExitStack() as stack:
-        for library_resource in library_resources:
-            library_path = stack.enter_context(as_file(library_resource))
-            if library_path.is_file():
-                return load_library(str(library_path))
+    # CMake sets the shared library prefix to "lib" on every platform, the
+    # project name is leapct, and src/CMakeLists.txt installs the target into
+    # the leapctype package directory. Therefore the installed package data file
+    # is expected to have the exact platform-specific name selected above.
+    library_resource = files(__package__) / library_name
+    with as_file(library_resource) as library_path:
+        if library_path.is_file():
+            return load_library(str(library_path))
 
     package_dir = Path(__file__).resolve().parent
     fallback_path = package_dir / fallback_build_path
@@ -99,8 +84,7 @@ def _load_leap_library(lib_dir=""):
         return load_library(str(fallback_path))
 
     print('Error: could not find LEAP dynamic library at')
-    for library_resource in library_resources:
-        print(library_resource)
+    print(library_resource)
     print('or')
     print(fallback_path)
     return None
