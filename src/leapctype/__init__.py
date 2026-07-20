@@ -8,11 +8,14 @@
 ################################################################################
 
 import ctypes
+import fnmatch
 import os
 import sys
+import warnings
+from contextlib import ExitStack
+from importlib.resources import as_file, files
+from pathlib import Path
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-import site
-import glob
 import imageio
 from sys import platform as _platform
 from numpy.ctypeslib import ndpointer
@@ -24,6 +27,84 @@ except:
     has_torch = False
 from leap_filter_sequence import *
 #testFS = filterSequence()
+
+def _load_leap_library(lib_dir=""):
+    if _platform == "linux" or _platform == "linux2":
+        import readline
+        from ctypes import cdll
+        library_pattern = "*leapct*.so"
+        fallback_name = "libleapct.so"
+        fallback_build_path = Path("../build/lib/libleapct.so")
+        load_library = cdll.LoadLibrary
+    elif _platform == "win32":
+        from ctypes import windll
+        library_pattern = "*leapct*.dll"
+        fallback_name = "libleapct.dll"
+        fallback_build_path = Path(r"..\win_build\bin\Release\libleapct.dll")
+
+        def load_library(path):
+            try:
+                return windll.LoadLibrary(str(path))
+            except Exception:
+                return ctypes.CDLL(str(path), winmode=0)
+    elif _platform == "darwin":  # Darwin is the name for MacOS in Python's platform module
+        from ctypes import cdll
+        library_pattern = "*leapct*.dylib"
+        fallback_name = "libleapct.dylib"
+        fallback_build_path = Path("../build/lib/libleapct.dylib")
+        load_library = cdll.LoadLibrary
+    else:
+        print("Error: unsupported platform for LEAP dynamic library loading:")
+        print(_platform)
+        return None
+
+    if len(lib_dir) > 0:
+        package_dir = Path(lib_dir)
+        library_paths = sorted(package_dir.glob(library_pattern))
+        if not library_paths:
+            library_paths = [package_dir / fallback_name]
+        library_paths.append(package_dir / fallback_build_path)
+        for library_path in library_paths:
+            if library_path.is_file():
+                return load_library(str(library_path))
+        print('Error: could not find LEAP dynamic library at')
+        for library_path in library_paths:
+            print(library_path)
+        return None
+
+    package_files = files(__package__)
+    library_resources = sorted(
+        child for child in package_files.iterdir()
+        if fnmatch.fnmatch(child.name, library_pattern)
+    )
+    if not library_resources:
+        library_resources = [package_files / fallback_name]
+    with ExitStack() as stack:
+        for library_resource in library_resources:
+            library_path = stack.enter_context(as_file(library_resource))
+            if library_path.is_file():
+                return load_library(str(library_path))
+
+    package_dir = Path(__file__).resolve().parent
+    fallback_path = package_dir / fallback_build_path
+    if fallback_path.is_file():
+        warnings.warn(
+            "LEAP dynamic library was not found as package data where it is "
+            "expected after a wheel install or `pip install -e .`; falling "
+            f"back to {fallback_path}. This may load a library left over from "
+            "a direct CMake build instead of the installed package.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return load_library(str(fallback_path))
+
+    print('Error: could not find LEAP dynamic library at')
+    for library_resource in library_resources:
+        print(library_resource)
+    print('or')
+    print(fallback_path)
+    return None
+
 
 class tomographicModels:
     """ Python class for tomographicModels bindings
@@ -74,95 +155,7 @@ class tomographicModels:
             lib_dir (string): Path to the LEAP dynamic library, default value is the same path as this file
         
         """
-        if len(lib_dir) > 0:
-            current_dir = lib_dir
-        else:
-            current_dir = os.path.abspath(os.path.dirname(__file__))
-
-        if _platform == "linux" or _platform == "linux2":
-            import readline
-            from ctypes import cdll
-
-            #libdir = site.getsitepackages()[0]
-            #libname = glob.glob(os.path.join(libdir, "leapct*.so"))
-            libname = glob.glob(os.path.join(current_dir, "*leapct*.so"))
-            if len(libname) == 0:
-                fullPath = os.path.join(current_dir, 'libleapct.so')
-                fullPath_backup = os.path.join(current_dir, '../build/lib/libleapct.so')
-            elif len(libname) == 1:
-                fullPath = libname[0]
-                fullPath_backup = ""
-            elif len(libname) >= 2:
-                fullPath = libname[0]
-                fullPath_backup = libname[1]
-            
-            if os.path.isfile(fullPath):
-                self.libprojectors = cdll.LoadLibrary(fullPath)
-            elif os.path.isfile(fullPath_backup):
-                self.libprojectors = cdll.LoadLibrary(fullPath_backup)
-            else:
-                print('Error: could not find LEAP dynamic library at')
-                print(fullPath)
-                print('or')
-                print(fullPath_backup)
-                self.libprojectors = None
-            
-        elif _platform == "win32":
-            from ctypes import windll
-        
-            libname = glob.glob(os.path.join(current_dir, "*leapct*.dll"))
-            if len(libname) == 0:
-                fullPath = os.path.join(current_dir, 'libleapct.dll')
-                fullPath_backup = os.path.join(current_dir, r'..\win_build\bin\Release\libleapct.dll')
-            elif len(libname) == 1:
-                fullPath = libname[0]
-                fullPath_backup = ""
-            elif len(libname) >= 2:
-                fullPath = libname[0]
-                fullPath_backup = libname[1]
-        
-            if os.path.isfile(fullPath):
-                try:
-                    self.libprojectors = windll.LoadLibrary(fullPath)
-                except:
-                    self.libprojectors = ctypes.CDLL(fullPath, winmode=0)
-            elif os.path.isfile(fullPath_backup):
-                try:
-                    self.libprojectors = windll.LoadLibrary(fullPath_backup)
-                except:
-                    self.libprojectors = ctypes.CDLL(fullPath_backup, winmode=0)
-            else:
-                print('Error: could not find LEAP dynamic library at')
-                print(fullPath)
-                print('or')
-                print(fullPath_backup)
-                self.libprojectors = None
-        
-        elif _platform == "darwin":  # Darwin is the name for MacOS in Python's platform module
-            from ctypes import cdll
-            
-            libname = glob.glob(os.path.join(current_dir, "*leapct*.dylib"))
-            if len(libname) == 0:
-                fullPath = os.path.join(current_dir, 'libleapct.dylib')
-                fullPath_backup = os.path.join(current_dir, '../build/lib/libleapct.dylib')
-            elif len(libname) == 1:
-                fullPath = libname[0]
-                fullPath_backup = ""
-            elif len(libname) >= 2:
-                fullPath = libname[0]
-                fullPath_backup = libname[1]
-            
-            if os.path.isfile(fullPath):
-                self.libprojectors = cdll.LoadLibrary(fullPath)
-            elif os.path.isfile(fullPath_backup):
-                self.libprojectors = cdll.LoadLibrary(fullPath_backup)
-            else:
-                print('Error: could not find LEAP dynamic library at')
-                print(fullPath)
-                print('or')
-                print(fullPath_backup)
-                self.libprojectors = None
-        
+        self.libprojectors = _load_leap_library(lib_dir)
         if self.libprojectors is None:
             self.param_id = -1
         else:
