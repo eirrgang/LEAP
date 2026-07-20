@@ -1,6 +1,9 @@
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 if(LEAP_CUDA)
     find_package(CUDAToolkit 11.7 REQUIRED)
+elseif(LEAP_HIP)
+    find_package(hip REQUIRED)
+    find_package(hipfft REQUIRED)
 endif()
 
 if (WIN32)
@@ -105,10 +108,23 @@ set(SRC_CU
   total_variation.cu
 )
 
+if(LEAP_HIP)
+    list(TRANSFORM SRC_CPP PREPEND "${LEAP_HIPIFIED_SRC_DIR}/")
+    list(TRANSFORM HEADER PREPEND "${LEAP_HIPIFIED_SRC_DIR}/")
+    list(TRANSFORM SRC_CU PREPEND "${LEAP_HIPIFIED_SRC_DIR}/")
+    get_hipified_list("${SRC_CPP}" SRC_CPP)
+    get_hipified_list("${HEADER}" HEADER)
+    get_hipified_list("${SRC_CU}" SRC_CU)
+    set_source_files_properties(${SRC_CPP} ${SRC_CU} PROPERTIES LANGUAGE HIP)
+endif()
+
 include_directories(
   ./
   ${CUDA_INCLUDE_DIRS}
 )
+if(LEAP_HIP)
+    include_directories(${LEAP_HIPIFIED_SRC_DIR})
+endif()
 
 #add_library(leapct SHARED main_projector_ctype.cpp parameters.cpp projectors_cpu.cpp projectors.cu projectors_SF.cu)
 #target_link_libraries(leapct "${TORCH_LIBRARIES}")
@@ -117,7 +133,7 @@ add_library(leapct SHARED
   ${SRC_CPP}
 )
 
-if(LEAP_CUDA)
+if(LEAP_CUDA OR LEAP_HIP)
     target_sources(leapct PRIVATE ${SRC_CU})
 endif()
 
@@ -158,9 +174,15 @@ elseif (LEAP_HIP)
         __USE_NOTEX
         __INCLUDE_CUFFT
     )
+    get_filename_component(_ROCM_ROOT "${hipfft_DIR}/../../.." ABSOLUTE)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+      ${_ROCM_ROOT}/include
+      ${_ROCM_ROOT}/include/hipfft
+    )
     target_link_libraries(${PROJECT_NAME}
-      OpenMP::OpenMP_CXX
+      hip::host
       hip::hipfft
+      OpenMP::OpenMP_CXX
     )
 else ()
     target_compile_definitions(
