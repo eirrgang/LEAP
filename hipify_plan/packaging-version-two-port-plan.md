@@ -51,7 +51,7 @@ Update this table after each commit or explicit pause point.
 | Phase 4 Python packages | `version-two-packaging-port` | f32101f | done | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
 | Phase 5 loader | `version-two-packaging-port` | 1cbad28 | done | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; Phase 7 later verifies the package-resource native library location. |
 | Phase 6 top CMake | `version-two-packaging-port` | b001ee0 | done | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
-| Phase 7 src CMake | `version-two-packaging-port` | pending | ready to commit | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
+| Phase 7 src CMake | `version-two-packaging-port` | 3c9fa07 | done | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
 | Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | not started | not run | Apply moved-path equivalent. |
 | Phase 9 docs | `version-two-packaging-port` | pending | not started | not run | README and workflow docs. |
 | Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
@@ -606,7 +606,7 @@ Recommended default:
 - [x] Legacy setup-file decision recorded: keep existing `setup.py`, `setup.cfg`, and setup helper scripts tracked for now; exclude them from the sdist so `pyproject.toml` is the packaging front end.
 - [x] User approval not needed for deletion because no legacy setup files are being deleted in this phase.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: e0e8cd1.
 - [x] Validation: isolated CPU-only `python -m build` passed with `.wheelhouse/`, using `-Ccmake.define.CPUONLY=ON`; wheel contained flat Python modules plus `lib_cpu/libleapct_cpu.so`.
 
 ## Commit message
@@ -642,7 +642,7 @@ This maximizes layout similarity and makes wheel package-data installation clean
 - [x] Update imports if required: existing absolute imports remain valid with package directories; `pyproject.toml` wheel package entries updated from module files to package directories.
 - [x] Run import smoke checks: isolated CPU wheel built and installed; basic imports for `leapctype`, `xrayphysics`, and `leap_filter_sequence` passed. Importing `leap_preprocessing_algorithms` still triggers a default `tomographicModels()` shared-library load that fails until Phase 5/7 resource loading and install destination are adapted.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: f32101f.
 
 ## Commit message
 
@@ -697,7 +697,7 @@ The loader should:
 - [x] Confirm `leapctype.tomographicModels()` still calls through `super().__init__`.
 - [x] Run import/library-load smoke test: CPU-only wheel build/install passed, `leapctype.tomographicModels(only_cpu=True)` loaded the installed library via the current `lib_cpu/` install-layout fallback, and explicit `lib_dir` load passed.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: 1cbad28.
 
 ## Commit message
 
@@ -785,7 +785,7 @@ src/texture_compat.h
 - [x] HIPified source mapping handles subdirectories; explicit and implicit AMD builds completed after adding the missing `vector_types.h` include to `ray_tracing/analytic_ray_tracing_gpu.cuh`.
 - [x] scikit-build install destination checked: native library now installs into `leapctype/` for package builds.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: 3c9fa07.
 
 ## Commit message
 
