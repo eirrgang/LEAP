@@ -80,12 +80,12 @@ sdist.exclude = [
 ]
 
 wheel.packages = [
-    "src/leapctype.py",
-    "src/leaptorch.py",
-    "src/leap_filter_sequence.py",
-    "src/leap_preprocessing_algorithms.py",
-    "src/xrayphysics.py",
-    "src/leapctserver.py",
+    "src/leapctype",
+    "src/leaptorch",
+    "src/leap_filter_sequence",
+    "src/leap_preprocessing_algorithms",
+    "src/xrayphysics",
+    "src/leapctserver",
 ]
 wheel.py-api = "py3"
 # If we have to issue revised packages for the same software version,

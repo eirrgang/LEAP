@@ -47,8 +47,8 @@ Update this table after each commit or explicit pause point.
 | Phase 1 branch prep | `version-two-packaging-port` | 6c8a45f | done | not run | User approved proceeding after Phase 0; branch created from `version_two`; plan document restored from alignment branch. |
 | Phase 2a user subtree import | `version-two-packaging-port` | ecc8a6e | done | subtree files verified | User recreated `third_party/hipify_torch` subtree import and merge commit. |
 | Phase 2b support files | `version-two-packaging-port` | ec112fc, 74243a5, 544d06f | done | not run | HIPify helper/docs, GPU wheel helper, and cross-runtime smoke test helper committed. |
-| Phase 3 pyproject | `version-two-packaging-port` | pending | ready to commit | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
-| Phase 4 Python packages | `version-two-packaging-port` | pending | not started | not run | Convert modules to package dirs if approved. |
+| Phase 3 pyproject | `version-two-packaging-port` | e0e8cd1 | done | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
+| Phase 4 Python packages | `version-two-packaging-port` | pending | ready to commit | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
 | Phase 5 loader | `version-two-packaging-port` | pending | not started | not run | Resource-based shared-library loading. |
 | Phase 6 top CMake | `version-two-packaging-port` | pending | not started | not run | `LEAP_GPU` backend selection. |
 | Phase 7 src CMake | `version-two-packaging-port` | pending | not started | not run | Source lists and target/link rules. |
@@ -638,10 +638,10 @@ This maximizes layout similarity and makes wheel package-data installation clean
 
 ## Checklist
 
-- [ ] Move Python modules.
-- [ ] Update imports if required.
-- [ ] Run import smoke checks.
-- [ ] This document updated.
+- [x] Move Python modules to package directories, including `xrayphysics` and `leapctserver`.
+- [x] Update imports if required: existing absolute imports remain valid with package directories; `pyproject.toml` wheel package entries updated from module files to package directories.
+- [x] Run import smoke checks: isolated CPU wheel built and installed; basic imports for `leapctype`, `xrayphysics`, and `leap_filter_sequence` passed. Importing `leap_preprocessing_algorithms` still triggers a default `tomographicModels()` shared-library load that fails until Phase 5/7 resource loading and install destination are adapted.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -1107,6 +1107,13 @@ Result: `leapct-1.27.dev32+g7c5d55def-0-py3-none-linux_x86_64.whl` built success
   rm -rf /tmp/leap-phase3-wheel-cpu
   PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-phase3-wheel-cpu -Ccmake.define.CPUONLY=ON .
 Result: `leapct-1.27.dev9+g114070718.d20260804-0-py3-none-linux_x86_64.whl` built successfully. Wheel contents included flat Python modules (`leapctype.py`, `leaptorch.py`, `leap_filter_sequence.py`, `leap_preprocessing_algorithms.py`, `xrayphysics.py`, `leapctserver.py`) and `lib_cpu/libleapct_cpu.so`.
+
+2026-08-04 Phase 4: Isolated Python package front-end CPU-only wheel validation passed after converting Python modules to package directories:
+  rm -rf /tmp/leap-phase4-wheel-cpu
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-phase4-wheel-cpu -Ccmake.define.CPUONLY=ON .
+Result: `leapct-1.27.dev10+ge0e8cd1e6.d20260804-0-py3-none-linux_x86_64.whl` built successfully. Wheel contents included package directories (`leapctype/__init__.py`, `leaptorch/__init__.py`, `leap_filter_sequence/__init__.py`, `leap_preprocessing_algorithms/__init__.py`, `xrayphysics/__init__.py`, `leapctserver/__init__.py`) and `lib_cpu/libleapct_cpu.so`.
+
+2026-08-04 Phase 4: Installed the CPU wheel into `/tmp/leap-phase4-smoke` using `.wheelhouse/`; basic imports of `leapctype`, `xrayphysics`, and `leap_filter_sequence` passed. Importing `leap_preprocessing_algorithms` still triggers a default `tomographicModels()` shared-library load that fails because the library is installed to `lib_cpu/`, not package resources; this is expected to be addressed in Phase 5/7.
 ```
 
 
