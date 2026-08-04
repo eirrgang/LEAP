@@ -44,9 +44,9 @@ Update this table after each commit or explicit pause point.
 | Plan document created | `version_two` | pending | done | not run | Initial cross-session tracking document. |
 | Phase 0.1 source moves | `eirrgang-packaging-src-layout-alignment` | f51e125 | done | static include scan | Source files moved under `src/fbp`, `src/projectors`, `src/denoise`, `src/geometry`, and `src/ray_tracing`; cross-subdirectory includes updated to match `version_two` style. |
 | Phase 0.2 CMake path update | `eirrgang-packaging-src-layout-alignment` | c3bf0db | done | direct CMake CPU/HIP and `python -m build` CPU/AMD wheels passed | `src/CMakeLists.txt` paths updated; CPU-only and AMD HIP builds passed with explicit ROCm 6.4.3 compilers, including isolated `python -m build` using `.wheelhouse/`. |
-| Phase 1 branch prep | `version-two-packaging-port` | pending | in progress | not run | User approved proceeding after Phase 0; branch created from `version_two`; plan document restored from alignment branch. |
-| Phase 2a user subtree import | `version-two-packaging-port` | pending | paused | not run | Pausing before touching `third_party/hipify_torch/**` for user-created subtree import. |
-| Phase 2b support files | `version-two-packaging-port` | pending | not started | not run | HIPify/docs/scripts files after subtree import. |
+| Phase 1 branch prep | `version-two-packaging-port` | 6c8a45f | done | not run | User approved proceeding after Phase 0; branch created from `version_two`; plan document restored from alignment branch. |
+| Phase 2a user subtree import | `version-two-packaging-port` | ecc8a6e | done | subtree files verified | User recreated `third_party/hipify_torch` subtree import and merge commit. |
+| Phase 2b support files | `version-two-packaging-port` | pending | in progress | not run | Porting HIPify/docs/scripts support files after subtree import. |
 | Phase 3 pyproject | `version-two-packaging-port` | pending | not started | not run | Modern packaging. |
 | Phase 4 Python packages | `version-two-packaging-port` | pending | not started | not run | Convert modules to package dirs if approved. |
 | Phase 5 loader | `version-two-packaging-port` | pending | not started | not run | Resource-based shared-library loading. |
@@ -454,7 +454,7 @@ Port packaging infrastructure into `version_two`, using `eirrgang-packaging-src-
 - [x] User approved proceeding after Phase 0 on 2026-08-04.
 - [x] Branch created from `version_two`: `version-two-packaging-port`.
 - [x] This document updated with branch name and Phase 0 commit SHAs: f51e125, c3bf0db, 4fcfdc8, 7c5d55d, 8ce5d18.
-- [x] No code changes committed yet on `version-two-packaging-port`; only this plan document is staged for branch-prep tracking.
+- [x] No code changes committed yet on `version-two-packaging-port` as of branch prep commit 6c8a45f; only this plan document was committed for branch-prep tracking.
 
 ---
 
@@ -484,10 +484,10 @@ If helpful, the agent may show the user the reference commits and inspect their 
 ### Phase 2a checklist
 
 - [x] Agent paused before touching `third_party/hipify_torch/**` on `version_two`.
-- [ ] User recreated the subtree import and merge commit.
-- [ ] Resulting commit SHA recorded in this document.
-- [ ] Agent verified `third_party/hipify_torch/**` exists after the user-created commit.
-- [ ] Agent resumed remaining Phase 2 work.
+- [x] User recreated the subtree import and merge commit.
+- [x] Resulting merge commit SHA recorded: ecc8a6e (`Merge commit 'a0a3df914165f6f6c9dbd0d3e295bb99b3c73042' as 'third_party/hipify_torch'`).
+- [x] Agent verified `third_party/hipify_torch/**` exists after the user-created commit.
+- [x] Agent resumed remaining Phase 2 work.
 
 ## Phase 2b — Add non-subtree packaging support files
 
@@ -517,13 +517,13 @@ Adapt each commit to `version_two` as needed, but keep the intent and message re
 
 ## Checklist
 
-- [ ] User-created subtree import is present.
-- [ ] `cmake/LeapHipify.cmake` added.
-- [ ] `docs/hipify-strategy.md` added.
+- [x] User-created subtree import is present: merge commit ecc8a6e.
+- [x] `cmake/LeapHipify.cmake` added.
+- [x] `docs/hipify-strategy.md` added.
 - [ ] Scripts added.
-- [ ] `.gitignore` reviewed and updated manually.
-- [ ] No unrelated sample/output files added.
-- [ ] This document updated.
+- [x] `.gitignore` reviewed manually; no generated HIP/build-artifact ignore additions were needed beyond existing build/dist/wheel patterns.
+- [x] No unrelated sample/output files added.
+- [x] This document updated for the HIPify support-file commit.
 - [ ] Commits written with messages matching the packaging branch where practical.
 
 ## Commit messages to prefer where applicable
