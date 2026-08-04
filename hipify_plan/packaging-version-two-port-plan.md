@@ -48,8 +48,8 @@ Update this table after each commit or explicit pause point.
 | Phase 2a user subtree import | `version-two-packaging-port` | ecc8a6e | done | subtree files verified | User recreated `third_party/hipify_torch` subtree import and merge commit. |
 | Phase 2b support files | `version-two-packaging-port` | ec112fc, 74243a5, 544d06f | done | not run | HIPify helper/docs, GPU wheel helper, and cross-runtime smoke test helper committed. |
 | Phase 3 pyproject | `version-two-packaging-port` | e0e8cd1 | done | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
-| Phase 4 Python packages | `version-two-packaging-port` | pending | ready to commit | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
-| Phase 5 loader | `version-two-packaging-port` | pending | not started | not run | Resource-based shared-library loading. |
+| Phase 4 Python packages | `version-two-packaging-port` | f32101f | done | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
+| Phase 5 loader | `version-two-packaging-port` | pending | ready to commit | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; CPU package smoke load passes via current `lib_cpu/` install-layout fallback. |
 | Phase 6 top CMake | `version-two-packaging-port` | pending | not started | not run | `LEAP_GPU` backend selection. |
 | Phase 7 src CMake | `version-two-packaging-port` | pending | not started | not run | Source lists and target/link rules. |
 | Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | not started | not run | Apply moved-path equivalent. |
@@ -691,12 +691,12 @@ The loader should:
 
 ## Checklist
 
-- [ ] Add resource-based loader to `xrayphysics`.
-- [ ] Preserve explicit `lib_dir` behavior.
-- [ ] Preserve direct-build fallback behavior.
-- [ ] Confirm `leapctype.tomographicModels()` still calls through `super().__init__`.
-- [ ] Run import/library-load smoke test.
-- [ ] This document updated.
+- [x] Add resource-based loader to `xrayphysics`.
+- [x] Preserve explicit `lib_dir` behavior.
+- [x] Preserve direct-build fallback behavior.
+- [x] Confirm `leapctype.tomographicModels()` still calls through `super().__init__`.
+- [x] Run import/library-load smoke test: CPU-only wheel build/install passed, `leapctype.tomographicModels(only_cpu=True)` loaded the installed library via the current `lib_cpu/` install-layout fallback, and explicit `lib_dir` load passed.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -1114,6 +1114,19 @@ Result: `leapct-1.27.dev9+g114070718.d20260804-0-py3-none-linux_x86_64.whl` buil
 Result: `leapct-1.27.dev10+ge0e8cd1e6.d20260804-0-py3-none-linux_x86_64.whl` built successfully. Wheel contents included package directories (`leapctype/__init__.py`, `leaptorch/__init__.py`, `leap_filter_sequence/__init__.py`, `leap_preprocessing_algorithms/__init__.py`, `xrayphysics/__init__.py`, `leapctserver/__init__.py`) and `lib_cpu/libleapct_cpu.so`.
 
 2026-08-04 Phase 4: Installed the CPU wheel into `/tmp/leap-phase4-smoke` using `.wheelhouse/`; basic imports of `leapctype`, `xrayphysics`, and `leap_filter_sequence` passed. Importing `leap_preprocessing_algorithms` still triggers a default `tomographicModels()` shared-library load that fails because the library is installed to `lib_cpu/`, not package resources; this is expected to be addressed in Phase 5/7.
+
+2026-08-04 Phase 5: Isolated Python package front-end CPU-only wheel validation passed after adapting the loader in `src/xrayphysics/__init__.py`:
+  rm -rf /tmp/leap-phase5-wheel-cpu /tmp/leap-phase5-smoke
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-phase5-wheel-cpu -Ccmake.define.CPUONLY=ON .
+  .venv13/bin/python -m venv /tmp/leap-phase5-smoke
+  PIP_NO_INDEX=1 PIP_FIND_LINKS="$PWD/.wheelhouse /tmp/leap-phase5-wheel-cpu" /tmp/leap-phase5-smoke/bin/python -m pip install leapct
+  MPLCONFIGDIR=/tmp/leap-phase5-mpl /tmp/leap-phase5-smoke/bin/python - <<'PY'
+  import leapctype
+  import xrayphysics
+  m = leapctype.tomographicModels(only_cpu=True)
+  print(type(m).__name__)
+  PY
+Result: `tomographicModels` printed. The loader preferred the `leapctype` package resource path, then used the current CMake install-layout fallback at `site-packages/lib_cpu/libleapct_cpu.so` because Phase 7 has not yet moved the native install destination into `leapctype/`. Explicit `lib_dir` loading from the installed `lib_cpu` directory was also tested and passed.
 ```
 
 
