@@ -10,8 +10,8 @@
 #include "tomographic_models_c_interface.h"
 #include "list_of_tomographic_models.h"
 #include "tomographic_models.h"
-#include "phantom.h"
-#include "rebin.h"
+#include "ray_tracing/phantom.h"
+#include "geometry/rebin.h"
 #include "file_io.h"
 #include <stdlib.h>
 #include <stdio.h>

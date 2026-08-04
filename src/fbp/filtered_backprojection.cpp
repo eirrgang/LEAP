@@ -14,17 +14,17 @@
 #include <algorithm>
 #include <omp.h>
 #include "filtered_backprojection.h"
-#include "projectors.h"
+#include "projectors/projectors.h"
 #include "ray_weighting_cpu.h"
-#include "projectors_symmetric_cpu.h"
+#include "projectors/projectors_symmetric_cpu.h"
 #include "ramp_filter_cpu.h"
 #include "cpu_utils.h"
 #ifndef __USE_CPU
 #include "cuda_utils.h"
 #include "ramp_filter.cuh"
 #include "ray_weighting.cuh"
-#include "projectors_symmetric.cuh"
-#include "projectors_attenuated.cuh"
+#include "projectors/projectors_symmetric.cuh"
+#include "projectors/projectors_attenuated.cuh"
 #endif
 
 filteredBackprojection::filteredBackprojection()

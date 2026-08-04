@@ -10,7 +10,7 @@
 #include "rebin.h"
 #include "leap_defines.h"
 #include "log.h"
-#include "ramp_filter_cpu.h"
+#include "fbp/ramp_filter_cpu.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

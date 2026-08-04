@@ -27,10 +27,10 @@
 #include <cstring>
 #include <string>
 #include "parameters.h"
-#include "projectors.h"
-#include "filtered_backprojection.h"
+#include "projectors/projectors.h"
+#include "fbp/filtered_backprojection.h"
 #include "cpu_utils.h"
-#include "phantom.h"
+#include "ray_tracing/phantom.h"
 
 /**
  *  tomographicModels class

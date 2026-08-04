@@ -16,96 +16,96 @@ endif()
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/..)
 
 set(HEADER
-  analytic_ray_tracing.h
-  analytic_ray_tracing_gpu.cuh
-  backprojectors_VD.cuh
-  bilateral_filter.cuh
+  ray_tracing/analytic_ray_tracing.h
+  ray_tracing/analytic_ray_tracing_gpu.cuh
+  projectors/backprojectors_VD.cuh
+  denoise/bilateral_filter.cuh
   cpu_utils.h
   cuda_utils.h
   file_io.h
-  filtered_backprojection.h
-  find_center_cpu.h
-  geometric_calibration.cuh
-  guided_filter.cuh
+  fbp/filtered_backprojection.h
+  geometry/find_center_cpu.h
+  geometry/geometric_calibration.cuh
+  denoise/guided_filter.cuh
   leap_defines.h
   list_of_tomographic_models.h
   log.h
-  matching_pursuit.cuh
-  noise_filters.cuh
+  denoise/matching_pursuit.cuh
+  denoise/noise_filters.cuh
   parameters.h
-  phantom.h
-  projectors.h
-  projectors_Joseph.cuh
-  projectors_Joseph_cpu.h
-  projectors_SF.cuh
-  projectors_SF_cpu.h
-  projectors_Siddon.cuh
-  projectors_Siddon_cpu.h
-  projectors_attenuated.cuh
-  projectors_extendedSF.cuh
-  projectors_symmetric.cuh
-  projectors_symmetric_cpu.h
-  ramp_filter.cuh
-  ramp_filter_cpu.h
-  ray_weighting.cuh
-  ray_weighting_cpu.h
-  rebin.h
+  ray_tracing/phantom.h
+  projectors/projectors.h
+  projectors/projectors_Joseph.cuh
+  projectors/projectors_Joseph_cpu.h
+  projectors/projectors_SF.cuh
+  projectors/projectors_SF_cpu.h
+  projectors/projectors_Siddon.cuh
+  projectors/projectors_Siddon_cpu.h
+  projectors/projectors_attenuated.cuh
+  projectors/projectors_extendedSF.cuh
+  projectors/projectors_symmetric.cuh
+  projectors/projectors_symmetric_cpu.h
+  fbp/ramp_filter.cuh
+  fbp/ramp_filter_cpu.h
+  fbp/ray_weighting.cuh
+  fbp/ray_weighting_cpu.h
+  geometry/rebin.h
   resample.cuh
   resample_cpu.h
   scatter_models.cuh
-  sensitivity.cuh
-  sensitivity_cpu.h
+  projectors/sensitivity.cuh
+  projectors/sensitivity_cpu.h
   sinogram_replacement.h
   tomographic_models.h
   tomographic_models_c_interface.h
-  total_variation.cuh
+  denoise/total_variation.cuh
 )
 
 set(SRC_CPP
-  analytic_ray_tracing.cpp
+  ray_tracing/analytic_ray_tracing.cpp
   cpu_utils.cpp
   file_io.cpp
-  filtered_backprojection.cpp
-  find_center_cpu.cpp
+  fbp/filtered_backprojection.cpp
+  geometry/find_center_cpu.cpp
   list_of_tomographic_models.cpp
   parameters.cpp
-  phantom.cpp
-  projectors.cpp
-  projectors_Joseph_cpu.cpp
-  projectors_SF_cpu.cpp
-  projectors_Siddon_cpu.cpp
-  projectors_symmetric_cpu.cpp
-  ramp_filter_cpu.cpp
-  ray_weighting_cpu.cpp
-  rebin.cpp
+  ray_tracing/phantom.cpp
+  projectors/projectors.cpp
+  projectors/projectors_Joseph_cpu.cpp
+  projectors/projectors_SF_cpu.cpp
+  projectors/projectors_Siddon_cpu.cpp
+  projectors/projectors_symmetric_cpu.cpp
+  fbp/ramp_filter_cpu.cpp
+  fbp/ray_weighting_cpu.cpp
+  geometry/rebin.cpp
   resample_cpu.cpp
-  sensitivity_cpu.cpp
+  projectors/sensitivity_cpu.cpp
   sinogram_replacement.cpp
   tomographic_models.cpp
   tomographic_models_c_interface.cpp
 )
 
 set(SRC_CU
-  analytic_ray_tracing_gpu.cu
-  backprojectors_VD.cu
-  bilateral_filter.cu
+  ray_tracing/analytic_ray_tracing_gpu.cu
+  projectors/backprojectors_VD.cu
+  denoise/bilateral_filter.cu
   cuda_utils.cu
-  geometric_calibration.cu
-  guided_filter.cu
-  matching_pursuit.cu
-  noise_filters.cu
-  projectors_Joseph.cu
-  projectors_SF.cu
-  projectors_Siddon.cu
-  projectors_attenuated.cu
-  projectors_extendedSF.cu
-  projectors_symmetric.cu
-  ramp_filter.cu
-  ray_weighting.cu
+  geometry/geometric_calibration.cu
+  denoise/guided_filter.cu
+  denoise/matching_pursuit.cu
+  denoise/noise_filters.cu
+  projectors/projectors_Joseph.cu
+  projectors/projectors_SF.cu
+  projectors/projectors_Siddon.cu
+  projectors/projectors_attenuated.cu
+  projectors/projectors_extendedSF.cu
+  projectors/projectors_symmetric.cu
+  fbp/ramp_filter.cu
+  fbp/ray_weighting.cu
   resample.cu
   scatter_models.cu
-  sensitivity.cu
-  total_variation.cu
+  projectors/sensitivity.cu
+  denoise/total_variation.cu
 )
 
 if(LEAP_HIP)
@@ -120,6 +120,11 @@ endif()
 
 include_directories(
   ./
+  fbp
+  projectors
+  denoise
+  geometry
+  ray_tracing
   ${CUDA_INCLUDE_DIRS}
 )
 if(LEAP_HIP)

@@ -17,7 +17,7 @@
 
 #include <stdlib.h>
 #include "parameters.h"
-#include "projectors.h"
+#include "projectors/projectors.h"
 
 /**
  *  filteredBackprojection class
