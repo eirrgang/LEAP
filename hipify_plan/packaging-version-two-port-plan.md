@@ -983,7 +983,7 @@ Treat these as additive `version_two` functionality, not packaging-port conflict
 
 ## 11.2 `eirrgang-packaging`-only source files
 
-These exist in `eirrgang-packaging` but not directly in `version_two`:
+These previously existed in `eirrgang-packaging` but not directly in `version_two`:
 
 ```text
 src/cpu_CMakeLists.txt
@@ -992,12 +992,10 @@ src/cuda_utils.h_backup_working
 src/scatter_models_old.cu
 ```
 
-Recommended handling:
+Resolution:
 
-- Do not port backup files into `version_two`.
-- Exclude backup files from sdist/wheels.
-- Treat `scatter_models_old.cu` as non-comparable unless the user explicitly wants to preserve it.
-- `cpu_CMakeLists.txt` should not be needed once both branches use `LEAP_GPU=None`.
+- Removed these unused/extraneous files from `eirrgang-packaging-src-layout-alignment` on 2026-08-04.
+- They were not ported into `version_two`.
 
 ## 11.3 Python module/package layout differences
 
@@ -1109,7 +1107,7 @@ Not run yet.
 
 # 14. Open questions
 
-- [ ] Should `version_two` delete canonical `setup.py`, or leave a compatibility stub that points users to `pyproject.toml`?
-- [ ] Should `setup_AMD.py`, `setup_cpu.py`, `setup_torch.py`, `setup_old.py`, and `setup_ctype.py` remain tracked as local helper scripts?
-- [ ] Should `scatter_models_old.cu` be retained on the aligned packaging branch after the source-layout move?
+- [x] Should `version_two` delete canonical `setup.py`, or leave a compatibility stub that points users to `pyproject.toml`? Decision on 2026-08-04: delete canonical legacy setup files.
+- [x] Should `setup_AMD.py`, `setup_cpu.py`, `setup_torch.py`, `setup_old.py`, and `setup_ctype.py` remain tracked as local helper scripts? Decision on 2026-08-04: remove tracked helper scripts from both branches where present.
+- [x] Should `scatter_models_old.cu` be retained on the aligned packaging branch after the source-layout move? Decision on 2026-08-04: remove it, along with `src/cpu_CMakeLists.txt` and backup headers.
 - [ ] Should the fallback package version be exactly `2.0+untagged`, or should it use another `version_two`-specific identifier?
