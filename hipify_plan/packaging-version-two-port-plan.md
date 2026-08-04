@@ -50,8 +50,8 @@ Update this table after each commit or explicit pause point.
 | Phase 3 pyproject | `version-two-packaging-port` | e0e8cd1 | done | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
 | Phase 4 Python packages | `version-two-packaging-port` | f32101f | done | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
 | Phase 5 loader | `version-two-packaging-port` | 1cbad28 | done | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; Phase 7 later verifies the package-resource native library location. |
-| Phase 6 top CMake | `version-two-packaging-port` | pending | ready to commit | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
-| Phase 7 src CMake | `version-two-packaging-port` | pending | in progress | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
+| Phase 6 top CMake | `version-two-packaging-port` | b001ee0 | done | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
+| Phase 7 src CMake | `version-two-packaging-port` | pending | ready to commit | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
 | Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | not started | not run | Apply moved-path equivalent. |
 | Phase 9 docs | `version-two-packaging-port` | pending | not started | not run | README and workflow docs. |
 | Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
@@ -736,7 +736,7 @@ LEAP_GPU=NVIDIA|AMD|None
 - [x] AMD path configures and builds implicitly when HIP is detected and CUDA is not detected.
 - [x] None path configures and builds with `LEAP_GPU=None`.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: b001ee0.
 
 ## Commit message
 

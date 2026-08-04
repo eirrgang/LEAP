@@ -12,13 +12,16 @@ def _load_leap_library(lib_dir="", only_cpu=False):
     if _platform == "linux" or _platform == "linux2":
         import readline
         from ctypes import cdll
-        library_name = "libleapct_cpu.so" if only_cpu else "libleapct.so"
-        fallback_build_path = Path("../../cpu_build/lib_cpu/libleapct_cpu.so") if only_cpu else Path("../../build/lib/libleapct.so")
+        library_names = ["libleapct_cpu.so", "libleapct.so"] if only_cpu else ["libleapct.so"]
+        fallback_build_paths = [
+            Path("../../cpu_build/lib_cpu/libleapct_cpu.so"),
+            Path("../../build/lib/libleapct.so"),
+        ] if only_cpu else [Path("../../build/lib/libleapct.so")]
         load_library = cdll.LoadLibrary
     elif _platform == "win32":
         from ctypes import windll
-        library_name = "libleapct_cpu.dll" if only_cpu else "libleapct.dll"
-        fallback_build_path = Path(r"..\..\win_build\bin\Release") / library_name
+        library_names = ["libleapct_cpu.dll", "libleapct.dll"] if only_cpu else ["libleapct.dll"]
+        fallback_build_paths = [Path(r"..\..\win_build\bin\Release") / name for name in library_names]
 
         def load_library(path):
             try:
@@ -27,48 +30,57 @@ def _load_leap_library(lib_dir="", only_cpu=False):
                 return ctypes.CDLL(str(path), winmode=0)
     elif _platform == "darwin":  # Darwin is the name for MacOS in Python's platform module
         from ctypes import cdll
-        library_name = "libleapct_cpu.dylib" if only_cpu else "libleapct.dylib"
-        fallback_build_path = Path("../../cpu_build/lib_cpu/libleapct_cpu.dylib") if only_cpu else Path("../../build/lib/libleapct.dylib")
+        library_names = ["libleapct_cpu.dylib", "libleapct.dylib"] if only_cpu else ["libleapct.dylib"]
+        fallback_build_paths = [
+            Path("../../cpu_build/lib_cpu/libleapct_cpu.dylib"),
+            Path("../../build/lib/libleapct.dylib"),
+        ] if only_cpu else [Path("../../build/lib/libleapct.dylib")]
         load_library = cdll.LoadLibrary
     else:
         raise RuntimeError(f"unsupported platform for LEAP dynamic library loading: {_platform}")
 
     if len(lib_dir) > 0:
-        library_path = Path(lib_dir) / library_name
-        if library_path.is_file():
-            return load_library(str(library_path))
+        for library_name in library_names:
+            library_path = Path(lib_dir) / library_name
+            if library_path.is_file():
+                return load_library(str(library_path))
 
-    library_resource = files("leapctype") / library_name
-    with as_file(library_resource) as library_path:
-        if library_path.is_file():
-            return load_library(str(library_path))
+    library_resources = [files("leapctype") / name for name in library_names]
+    for library_resource in library_resources:
+        with as_file(library_resource) as library_path:
+            if library_path.is_file():
+                return load_library(str(library_path))
 
     package_dir = Path(__file__).resolve().parent
-    installed_lib_dir = package_dir.parent / ("lib_cpu" if only_cpu else "lib") / library_name
-    if installed_lib_dir.is_file():
-        warnings.warn(
-            "LEAP dynamic library was not found in the leapctype package "
-            f"directory; falling back to {installed_lib_dir}. This supports "
-            "the current CMake install layout until native libraries are "
-            "installed as leapctype package data.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-        return load_library(str(installed_lib_dir))
+    installed_lib_dirs = [package_dir.parent / "lib_cpu" / name for name in library_names] if only_cpu else []
+    installed_lib_dirs.extend(package_dir.parent / "lib" / name for name in library_names)
+    for installed_lib_dir in installed_lib_dirs:
+        if installed_lib_dir.is_file():
+            warnings.warn(
+                "LEAP dynamic library was not found in the leapctype package "
+                f"directory; falling back to {installed_lib_dir}. This supports "
+                "legacy CMake install layouts that did not install native "
+                "libraries as leapctype package data.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return load_library(str(installed_lib_dir))
 
-    fallback_path = package_dir / fallback_build_path
-    if fallback_path.is_file():
-        warnings.warn(
-            "LEAP dynamic library was not found as package data where it is "
-            "expected after a wheel install or `pip install -e .`; falling "
-            f"back to {fallback_path}. This may load a library left over from "
-            "a direct CMake build instead of the installed package.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-        return load_library(str(fallback_path))
+    fallback_paths = [package_dir / path for path in fallback_build_paths]
+    for fallback_path in fallback_paths:
+        if fallback_path.is_file():
+            warnings.warn(
+                "LEAP dynamic library was not found as package data where it is "
+                "expected after a wheel install or `pip install -e .`; falling "
+                f"back to {fallback_path}. This may load a library left over from "
+                "a direct CMake build instead of the installed package.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return load_library(str(fallback_path))
 
-    raise RuntimeError(f"could not find LEAP dynamic library at {library_resource}, {installed_lib_dir}, or {fallback_path}")
+    searched_paths = library_resources + installed_lib_dirs + fallback_paths
+    raise RuntimeError("could not find LEAP dynamic library at " + ", ".join(str(path) for path in searched_paths))
 
 
 class xrayPhysics:
