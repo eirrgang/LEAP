@@ -46,7 +46,7 @@ Update this table after each commit or explicit pause point.
 | Phase 0.2 CMake path update | `eirrgang-packaging-src-layout-alignment` | c3bf0db | done | direct CMake CPU/HIP and `python -m build` CPU/AMD wheels passed | `src/CMakeLists.txt` paths updated; CPU-only and AMD HIP builds passed with explicit ROCm 6.4.3 compilers, including isolated `python -m build` using `.wheelhouse/`. |
 | Phase 1 branch prep | `version-two-packaging-port` | 6c8a45f | done | not run | User approved proceeding after Phase 0; branch created from `version_two`; plan document restored from alignment branch. |
 | Phase 2a user subtree import | `version-two-packaging-port` | ecc8a6e | done | subtree files verified | User recreated `third_party/hipify_torch` subtree import and merge commit. |
-| Phase 2b support files | `version-two-packaging-port` | ec112fc | in progress | not run | HIPify CMake helper/docs and hipify CLI pin committed; porting wheel helper scripts next. |
+| Phase 2b support files | `version-two-packaging-port` | ec112fc, 74243a5 | in progress | not run | HIPify CMake helper/docs and GPU wheel helper committed; porting cross-runtime smoke test helper next. |
 | Phase 3 pyproject | `version-two-packaging-port` | pending | not started | not run | Modern packaging. |
 | Phase 4 Python packages | `version-two-packaging-port` | pending | not started | not run | Convert modules to package dirs if approved. |
 | Phase 5 loader | `version-two-packaging-port` | pending | not started | not run | Resource-based shared-library loading. |
@@ -520,7 +520,7 @@ Adapt each commit to `version_two` as needed, but keep the intent and message re
 - [x] User-created subtree import is present: merge commit ecc8a6e.
 - [x] `cmake/LeapHipify.cmake` added.
 - [x] `docs/hipify-strategy.md` added.
-- [ ] Scripts added (`scripts/build-gpu-wheel.sh` ready for commit; cross-runtime smoke test scripts still pending).
+- [x] Scripts added: `scripts/build-gpu-wheel.sh`, `scripts/cross-runtime-smoke-test.md`, and `scripts/cross-runtime-smoke-test.sh`.
 - [x] `.gitignore` reviewed manually; no generated HIP/build-artifact ignore additions were needed beyond existing build/dist/wheel patterns.
 - [x] No unrelated sample/output files added.
 - [x] This document updated for the HIPify support-file and GPU wheel helper commits.
