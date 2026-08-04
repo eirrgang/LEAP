@@ -603,7 +603,7 @@ Recommended default:
 ## Checklist
 
 - [x] `pyproject.toml` added/adapted for `version_two`, including flat Python modules and XRayPhysics/leapctserver modules.
-- [x] Legacy setup-file decision recorded: keep existing `setup.py`, `setup.cfg`, and setup helper scripts tracked for now; exclude them from the sdist so `pyproject.toml` is the packaging front end.
+- [x] Legacy setup-file decision recorded: initial port kept existing setup files tracked and excluded from sdist; follow-up cleanup removed `setup.py`, `setup.cfg`, `setup_AMD.py`, `setup_cpu.py`, `setup_torch.py`, `setup_old.py`, and `setup_ctype.py` from `version-two-packaging-port`.
 - [x] User approval not needed for deletion because no legacy setup files are being deleted in this phase.
 - [x] This document updated.
 - [x] Commit written: e0e8cd1.
@@ -1241,7 +1241,7 @@ Result: 92 common `src/` paths. Packaging-only paths: `cpu_CMakeLists.txt`, `cud
 
 # 14. Open questions
 
-- [ ] Should `version_two` delete canonical `setup.py`, or leave a compatibility stub that points users to `pyproject.toml`?
-- [ ] Should `setup_AMD.py`, `setup_cpu.py`, `setup_torch.py`, `setup_old.py`, and `setup_ctype.py` remain tracked as local helper scripts?
+- [x] Should `version_two` delete canonical `setup.py`, or leave a compatibility stub that points users to `pyproject.toml`? Decision on 2026-08-04: delete canonical legacy setup files.
+- [x] Should `setup_AMD.py`, `setup_cpu.py`, `setup_torch.py`, `setup_old.py`, and `setup_ctype.py` remain tracked as local helper scripts? Decision on 2026-08-04: remove these helper scripts.
 - [ ] Should `scatter_models_old.cu` be retained on the aligned packaging branch after the source-layout move?
 - [ ] Should the fallback package version be exactly `2.0+untagged`, or should it use another `version_two`-specific identifier?
