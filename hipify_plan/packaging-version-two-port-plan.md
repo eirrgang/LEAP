@@ -49,9 +49,9 @@ Update this table after each commit or explicit pause point.
 | Phase 2b support files | `version-two-packaging-port` | ec112fc, 74243a5, 544d06f | done | not run | HIPify helper/docs, GPU wheel helper, and cross-runtime smoke test helper committed. |
 | Phase 3 pyproject | `version-two-packaging-port` | e0e8cd1 | done | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
 | Phase 4 Python packages | `version-two-packaging-port` | f32101f | done | isolated CPU wheel and basic imports passed | Converted flat Python modules to package directories and updated `pyproject.toml` wheel package entries; full library-load import remains for Phase 5 loader/CMake install work. |
-| Phase 5 loader | `version-two-packaging-port` | pending | ready to commit | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; CPU package smoke load passes via current `lib_cpu/` install-layout fallback. |
-| Phase 6 top CMake | `version-two-packaging-port` | pending | not started | not run | `LEAP_GPU` backend selection. |
-| Phase 7 src CMake | `version-two-packaging-port` | pending | not started | not run | Source lists and target/link rules. |
+| Phase 5 loader | `version-two-packaging-port` | 1cbad28 | done | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; Phase 7 later verifies the package-resource native library location. |
+| Phase 6 top CMake | `version-two-packaging-port` | pending | ready to commit | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
+| Phase 7 src CMake | `version-two-packaging-port` | pending | in progress | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
 | Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | not started | not run | Apply moved-path equivalent. |
 | Phase 9 docs | `version-two-packaging-port` | pending | not started | not run | README and workflow docs. |
 | Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
@@ -729,12 +729,13 @@ LEAP_GPU=NVIDIA|AMD|None
 
 ## Checklist
 
-- [ ] Top-level `CMakeLists.txt` updated.
-- [ ] `LEAP_GPU` cache values set.
-- [ ] NVIDIA path configures or fails clearly.
-- [ ] AMD path configures or fails clearly.
-- [ ] None path configures.
-- [ ] This document updated.
+- [x] Top-level `CMakeLists.txt` updated.
+- [x] `LEAP_GPU` cache values set.
+- [x] NVIDIA path configures or fails clearly: current environment has no CUDA compiler, and `LEAP_GPU=NVIDIA` fails with `LEAP_GPU=NVIDIA requires a CUDA compiler`.
+- [x] AMD path configures and builds explicitly with `LEAP_GPU=AMD`.
+- [x] AMD path configures and builds implicitly when HIP is detected and CUDA is not detected.
+- [x] None path configures and builds with `LEAP_GPU=None`.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -778,12 +779,12 @@ src/texture_compat.h
 
 ## Checklist
 
-- [ ] Source lists updated for `version_two` layout.
-- [ ] CPU-only source set builds without CUDA/HIP sources.
-- [ ] CUDA/HIP source set includes expected `.cu` files.
-- [ ] HIPified source mapping handles subdirectories.
-- [ ] scikit-build install destination checked.
-- [ ] This document updated.
+- [x] Source lists updated for `version_two` layout.
+- [x] CPU-only source set builds without CUDA/HIP sources.
+- [x] CUDA/HIP source set includes expected `.cu` files, including `version_two` physics/billiards and moved subdirectory sources.
+- [x] HIPified source mapping handles subdirectories; explicit and implicit AMD builds completed after adding the missing `vector_types.h` include to `ray_tracing/analytic_ray_tracing_gpu.cuh`.
+- [x] scikit-build install destination checked: native library now installs into `leapctype/` for package builds.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -1126,7 +1127,52 @@ Result: `leapct-1.27.dev10+ge0e8cd1e6.d20260804-0-py3-none-linux_x86_64.whl` bui
   m = leapctype.tomographicModels(only_cpu=True)
   print(type(m).__name__)
   PY
-Result: `tomographicModels` printed. The loader preferred the `leapctype` package resource path, then used the current CMake install-layout fallback at `site-packages/lib_cpu/libleapct_cpu.so` because Phase 7 has not yet moved the native install destination into `leapctype/`. Explicit `lib_dir` loading from the installed `lib_cpu` directory was also tested and passed.
+Result: `tomographicModels` printed. The loader preferred the `leapctype` package resource path, then used the current CMake install-layout fallback at `site-packages/lib_cpu/libleapct_cpu.so` because Phase 7 had not yet moved the native install destination into `leapctype/`. Explicit `lib_dir` loading from the installed `lib_cpu` directory was also tested and passed.
+
+2026-08-04 Phase 6/7: Direct CMake CPU backend validation passed:
+  rm -rf /tmp/leap-version-two-cpu
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-version-two-cpu -DLEAP_GPU=None
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake --build /tmp/leap-version-two-cpu -j
+Result: configure selected `LEAP_GPU selected accelerator type NONE`; build completed with `[100%] Built target leapct`.
+
+2026-08-04 Phase 6/7: Direct CMake explicit AMD backend validation passed:
+  rm -rf /tmp/leap-version-two-hip-explicit
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-version-two-hip-explicit -DLEAP_GPU=AMD -DCMAKE_HIP_ARCHITECTURES=gfx90a
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake --build /tmp/leap-version-two-hip-explicit -j
+Result: configure selected `LEAP_GPU selected accelerator type AMD`; HIPify preserved subdirectories; build completed with `[100%] Built target leapct`.
+
+2026-08-04 Phase 6/7: Direct CMake implicit AMD backend validation passed by omitting `LEAP_GPU` while making sure `enable_language(HIP)` can succeed:
+  rm -rf /tmp/leap-version-two-hip-implicit
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-version-two-hip-implicit -DCMAKE_HIP_ARCHITECTURES=gfx90a
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake --build /tmp/leap-version-two-hip-implicit -j
+Result: configure detected `/opt/rocm-6.4.3/lib/llvm/bin/clang++` as the HIP compiler, selected `LEAP_GPU selected accelerator type AMD`, and build completed with `[100%] Built target leapct`.
+
+2026-08-04 Phase 6/7: NVIDIA backend clear-failure check passed in this non-CUDA environment:
+  rm -rf /tmp/leap-version-two-cuda-clear-fail
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-version-two-cuda-clear-fail -DLEAP_GPU=NVIDIA
+Result: configure failed with `LEAP_GPU=NVIDIA requires a CUDA compiler`.
+
+2026-08-04 Phase 6/7: Isolated Python package front-end explicit AMD wheel validation passed using `.wheelhouse/`:
+  rm -rf /tmp/leap-version-two-wheel-amd-explicit
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-version-two-wheel-amd-explicit -Ccmake.define.LEAP_GPU=AMD -Ccmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a .
+Result: configure selected `LEAP_GPU selected accelerator type AMD`; `leapct-1.27.dev12+g1cbad2845.d20260804-0-py3-none-linux_x86_64.whl` built successfully.
+
+2026-08-04 Phase 6/7: Isolated Python package front-end implicit AMD wheel validation passed using `.wheelhouse/` and no `LEAP_GPU` setting:
+  rm -rf /tmp/leap-version-two-wheel-amd-implicit
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-version-two-wheel-amd-implicit -Ccmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a .
+Result: configure detected the HIP compiler, selected `LEAP_GPU selected accelerator type AMD`, and `leapct-1.27.dev12+g1cbad2845.d20260804-0-py3-none-linux_x86_64.whl` built successfully.
+
+2026-08-04 Phase 7: Isolated Python package front-end CPU wheel validation passed with `LEAP_GPU=None` after installing native libraries into `leapctype/`:
+  rm -rf /tmp/leap-version-two-wheel-cpu-none /tmp/leap-version-two-cpu-none-smoke
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-version-two-wheel-cpu-none -Ccmake.define.LEAP_GPU=None .
+  .venv13/bin/python -m venv /tmp/leap-version-two-cpu-none-smoke
+  PIP_NO_INDEX=1 PIP_FIND_LINKS="$PWD/.wheelhouse /tmp/leap-version-two-wheel-cpu-none" /tmp/leap-version-two-cpu-none-smoke/bin/python -m pip install leapct
+  MPLCONFIGDIR=/tmp/leap-version-two-cpu-none-mpl /tmp/leap-version-two-cpu-none-smoke/bin/python - <<'PY'
+  import leapctype
+  m = leapctype.tomographicModels(only_cpu=True)
+  print(type(m).__name__)
+  PY
+Result: wheel contained `leapctype/libleapct.so`; `tomographicModels` printed, confirming the loader found the native library through the `leapctype` package resource path.
 ```
 
 
