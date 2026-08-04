@@ -52,8 +52,8 @@ Update this table after each commit or explicit pause point.
 | Phase 5 loader | `version-two-packaging-port` | 1cbad28 | done | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; Phase 7 later verifies the package-resource native library location. |
 | Phase 6 top CMake | `version-two-packaging-port` | b001ee0 | done | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
 | Phase 7 src CMake | `version-two-packaging-port` | 3c9fa07 | done | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
-| Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | ready to commit | direct CPU CMake build passed | Equivalent CPU-only FBP guards already present in `src/fbp/filtered_backprojection.cpp`; recorded comparison against packaging commit `bbd30e1`. |
-| Phase 9 docs | `version-two-packaging-port` | pending | not started | not run | README and workflow docs. |
+| Phase 8 CPU FBP fix | `version-two-packaging-port` | 044ef2e | done | direct CPU CMake build passed | Equivalent CPU-only FBP guards already present in `src/fbp/filtered_backprojection.cpp`; recorded comparison against packaging commit `bbd30e1`. |
+| Phase 9 docs | `version-two-packaging-port` | pending | ready to commit | not run | README wheel/editable/backend docs ported and linked to HIPify and cross-runtime docs. |
 | Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
 
 ---
@@ -844,10 +844,10 @@ Port and adapt:
 
 ## Checklist
 
-- [ ] README updated.
-- [ ] `docs/hipify-strategy.md` referenced if appropriate.
-- [ ] `scripts/cross-runtime-smoke-test.md` referenced if appropriate.
-- [ ] This document updated.
+- [x] README updated with wheel install, editable install, build wheel, `LEAP_GPU=None`, `LEAP_GPU=NVIDIA`, `LEAP_GPU=AMD`, and GPU wheel helper usage.
+- [x] `docs/hipify-strategy.md` referenced.
+- [x] `scripts/cross-runtime-smoke-test.md` referenced.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -1179,6 +1179,8 @@ Result: wheel contained `leapctype/libleapct.so`; `tomographicModels` printed, c
   CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-phase8-cpu -DLEAP_GPU=None
   CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake --build /tmp/leap-phase8-cpu -j
 Result: configure selected `LEAP_GPU selected accelerator type NONE`; build completed with `[100%] Built target leapct`.
+
+2026-08-04 Phase 9: README documentation ported/adapted for wheel install, editable install, `python -m build`, `LEAP_GPU=None|NVIDIA|AMD`, GPU wheel helper usage, HIPify strategy docs, and cross-runtime smoke-test docs. Documentation-only change; no build validation required.
 ```
 
 
