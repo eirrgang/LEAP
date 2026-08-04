@@ -52,7 +52,7 @@ Update this table after each commit or explicit pause point.
 | Phase 5 loader | `version-two-packaging-port` | 1cbad28 | done | isolated CPU wheel load smoke passed | Resource-based loader added to `xrayphysics`; Phase 7 later verifies the package-resource native library location. |
 | Phase 6 top CMake | `version-two-packaging-port` | b001ee0 | done | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
 | Phase 7 src CMake | `version-two-packaging-port` | 3c9fa07 | done | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
-| Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | not started | not run | Apply moved-path equivalent. |
+| Phase 8 CPU FBP fix | `version-two-packaging-port` | pending | ready to commit | direct CPU CMake build passed | Equivalent CPU-only FBP guards already present in `src/fbp/filtered_backprojection.cpp`; recorded comparison against packaging commit `bbd30e1`. |
 | Phase 9 docs | `version-two-packaging-port` | pending | not started | not run | README and workflow docs. |
 | Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
 
@@ -813,10 +813,10 @@ src/filtered_backprojection.cpp
 
 ## Checklist
 
-- [ ] Locate equivalent packaging hunk.
-- [ ] Apply to `src/fbp/filtered_backprojection.cpp`.
-- [ ] CPU-only configure/build or import validation run.
-- [ ] This document updated.
+- [x] Locate equivalent packaging hunk: packaging commit `bbd30e1` guarded `zeroPadForOffsetScan_GPU` and `cudaFree(g_pad)` in the old flat `src/filtered_backprojection.cpp` path.
+- [x] Apply to `src/fbp/filtered_backprojection.cpp`: equivalent guards are already present in `version_two`; no additional code changes were needed.
+- [x] CPU-only configure/build validation run with `LEAP_GPU=None` and explicit ROCm 6.4.3 compilers; build passed.
+- [x] This document updated.
 - [ ] Commit written.
 
 ## Commit message
@@ -1173,6 +1173,12 @@ Result: configure detected the HIP compiler, selected `LEAP_GPU selected acceler
   print(type(m).__name__)
   PY
 Result: wheel contained `leapctype/libleapct.so`; `tomographicModels` printed, confirming the loader found the native library through the `leapctype` package resource path.
+
+2026-08-04 Phase 8: Compared packaging commit `bbd30e1` against `version_two`'s moved `src/fbp/filtered_backprojection.cpp`. The equivalent CPU-only guards around `zeroPadForOffsetScan_GPU` and `cudaFree(g_pad)` were already present in `version_two`, so no code changes were needed. Direct CPU validation passed:
+  rm -rf /tmp/leap-phase8-cpu
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake -S . -B /tmp/leap-phase8-cpu -DLEAP_GPU=None
+  CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 cmake --build /tmp/leap-phase8-cpu -j
+Result: configure selected `LEAP_GPU selected accelerator type NONE`; build completed with `[100%] Built target leapct`.
 ```
 
 
