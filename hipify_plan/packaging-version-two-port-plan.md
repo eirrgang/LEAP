@@ -53,8 +53,8 @@ Update this table after each commit or explicit pause point.
 | Phase 6 top CMake | `version-two-packaging-port` | b001ee0 | done | validated together with Phase 7 | `LEAP_GPU` backend selection added with HIP autodetection when `enable_language(HIP)` can succeed. |
 | Phase 7 src CMake | `version-two-packaging-port` | 3c9fa07 | done | CPU, explicit AMD, implicit AMD configure/build and AMD wheels passed | Source lists/target/link/install rules updated for packaged CPU/CUDA/HIP backends; HIPified mapping handles subdirectories. |
 | Phase 8 CPU FBP fix | `version-two-packaging-port` | 044ef2e | done | direct CPU CMake build passed | Equivalent CPU-only FBP guards already present in `src/fbp/filtered_backprojection.cpp`; recorded comparison against packaging commit `bbd30e1`. |
-| Phase 9 docs | `version-two-packaging-port` | pending | ready to commit | not run | README wheel/editable/backend docs ported and linked to HIPify and cross-runtime docs. |
-| Phase 10 validation | `version-two-packaging-port` | pending | not started | not run | CPU/wheel/CUDA/HIP checks. |
+| Phase 9 docs | `version-two-packaging-port` | 2a98251 | done | not run | README wheel/editable/backend docs ported and linked to HIPify and cross-runtime docs. |
+| Phase 10 validation | `version-two-packaging-port` | pending | ready to commit | CPU editable/wheel, explicit AMD wheel, implicit AMD wheel passed | Final validation and branch comparison completed; CUDA and cross-runtime module-swap checks not run in this environment. |
 
 ---
 
@@ -817,7 +817,7 @@ src/filtered_backprojection.cpp
 - [x] Apply to `src/fbp/filtered_backprojection.cpp`: equivalent guards are already present in `version_two`; no additional code changes were needed.
 - [x] CPU-only configure/build validation run with `LEAP_GPU=None` and explicit ROCm 6.4.3 compilers; build passed.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: 044ef2e.
 
 ## Commit message
 
@@ -848,7 +848,7 @@ Port and adapt:
 - [x] `docs/hipify-strategy.md` referenced.
 - [x] `scripts/cross-runtime-smoke-test.md` referenced.
 - [x] This document updated.
-- [ ] Commit written.
+- [x] Commit written: 2a98251.
 
 ## Commit message
 
@@ -921,6 +921,17 @@ comm -12 /tmp/packaging-src.txt /tmp/version-two-src.txt
 ```
 
 Use the common-path list to run targeted diffs on directly comparable files.
+
+## Phase 10 results
+
+- [x] CPU editable install validated with `LEAP_GPU=None`; `leapctype.tomographicModels(only_cpu=True).about()` printed the LEAP 2.0 banner.
+- [x] CPU wheel built with `LEAP_GPU=None`, installed into a clean venv, and loaded `leapctype/libleapct.so` through the package-resource loader.
+- [x] AMD wheel built with explicit `LEAP_GPU=AMD` and `CMAKE_HIP_ARCHITECTURES=gfx90a`.
+- [x] AMD wheel built implicitly by omitting `LEAP_GPU` while making HIP detection succeed; configure selected `LEAP_GPU selected accelerator type AMD`.
+- [ ] CUDA wheel validation not run: no CUDA compiler was detected in this environment; the NVIDIA path was previously checked to fail clearly.
+- [ ] Cross-runtime module-swap validation not run: requires external module environment selection beyond the current build validation.
+- [x] Source layout comparison completed. Remaining branch-specific `src/` paths are expected: 4 packaging-only legacy/backup paths and 38 `version_two`-only feature/package paths.
+- [x] Common source path diff stat captured for the 92 common `src/` paths; remaining diffs reflect `version_two` feature changes plus expected build/package adaptations.
 
 ## Commit or pause
 
@@ -1181,6 +1192,48 @@ Result: wheel contained `leapctype/libleapct.so`; `tomographicModels` printed, c
 Result: configure selected `LEAP_GPU selected accelerator type NONE`; build completed with `[100%] Built target leapct`.
 
 2026-08-04 Phase 9: README documentation ported/adapted for wheel install, editable install, `python -m build`, `LEAP_GPU=None|NVIDIA|AMD`, GPU wheel helper usage, HIPify strategy docs, and cross-runtime smoke-test docs. Documentation-only change; no build validation required.
+
+2026-08-04 Phase 10: Final CPU editable install validation passed using `.wheelhouse/`:
+  rm -rf /tmp/leap-final-editable-cpu
+  .venv13/bin/python -m venv /tmp/leap-final-editable-cpu
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 /tmp/leap-final-editable-cpu/bin/python -m pip install -e . -Ccmake.define.LEAP_GPU=None
+  MPLCONFIGDIR=/tmp/leap-final-editable-cpu-mpl /tmp/leap-final-editable-cpu/bin/python - <<'PY'
+  import leapctype
+  import xrayphysics
+  m = leapctype.tomographicModels(only_cpu=True)
+  m.about()
+  PY
+Result: LEAP 2.0 banner printed.
+
+2026-08-04 Phase 10: Final CPU wheel validation passed using `.wheelhouse/`:
+  rm -rf /tmp/leap-final-wheel-cpu /tmp/leap-final-smoke-cpu
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-final-wheel-cpu -Ccmake.define.LEAP_GPU=None .
+  .venv13/bin/python -m venv /tmp/leap-final-smoke-cpu
+  PIP_NO_INDEX=1 PIP_FIND_LINKS="$PWD/.wheelhouse /tmp/leap-final-wheel-cpu" /tmp/leap-final-smoke-cpu/bin/python -m pip install leapct
+  MPLCONFIGDIR=/tmp/leap-final-smoke-cpu-mpl /tmp/leap-final-smoke-cpu/bin/python - <<'PY'
+  import leapctype
+  import xrayphysics
+  m = leapctype.tomographicModels(only_cpu=True)
+  print(type(m).__name__)
+  PY
+Result: wheel `leapct-1.27.dev17+g2a9825101-0-py3-none-linux_x86_64.whl` built successfully; `tomographicModels` printed; wheel contains `leapctype/libleapct.so`.
+
+2026-08-04 Phase 10: Final explicit AMD wheel validation passed using `.wheelhouse/`:
+  rm -rf /tmp/leap-final-wheel-amd-explicit
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-final-wheel-amd-explicit -Ccmake.define.LEAP_GPU=AMD -Ccmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a .
+Result: configure selected `LEAP_GPU selected accelerator type AMD`; wheel `leapct-1.27.dev17+g2a9825101-0-py3-none-linux_x86_64.whl` built successfully and contains `leapctype/libleapct.so`.
+
+2026-08-04 Phase 10: Final implicit AMD wheel validation passed using `.wheelhouse/` and no `LEAP_GPU` setting:
+  rm -rf /tmp/leap-final-wheel-amd-implicit
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-final-wheel-amd-implicit -Ccmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a .
+Result: configure detected `/opt/rocm-6.4.3/lib/llvm/bin/clang++`, selected `LEAP_GPU selected accelerator type AMD`, and built wheel `leapct-1.27.dev17+g2a9825101-0-py3-none-linux_x86_64.whl` containing `leapctype/libleapct.so`.
+
+2026-08-04 Phase 10: Source layout comparison completed:
+  git ls-tree -r --name-only eirrgang-packaging-src-layout-alignment:src | sort > /tmp/packaging-src.txt
+  git ls-tree -r --name-only version-two-packaging-port:src | sort > /tmp/version-two-src.txt
+  diff -u /tmp/packaging-src.txt /tmp/version-two-src.txt
+  comm -12 /tmp/packaging-src.txt /tmp/version-two-src.txt > /tmp/common-src-paths.txt
+Result: 92 common `src/` paths. Packaging-only paths: `cpu_CMakeLists.txt`, `cuda_utils.h_backup`, `cuda_utils.h_backup_working`, `scatter_models_old.cu`. Version-two-only paths: 38 expected feature/package additions including `src/physics/**`, `inpainting`, `segmentation`, `statistics`, `ring_removal`, `xrayphysics/__init__.py`, and `leapctserver/__init__.py`.
 ```
 
 
