@@ -47,7 +47,7 @@ Update this table after each commit or explicit pause point.
 | Phase 1 branch prep | `version-two-packaging-port` | 6c8a45f | done | not run | User approved proceeding after Phase 0; branch created from `version_two`; plan document restored from alignment branch. |
 | Phase 2a user subtree import | `version-two-packaging-port` | ecc8a6e | done | subtree files verified | User recreated `third_party/hipify_torch` subtree import and merge commit. |
 | Phase 2b support files | `version-two-packaging-port` | ec112fc, 74243a5, 544d06f | done | not run | HIPify helper/docs, GPU wheel helper, and cross-runtime smoke test helper committed. |
-| Phase 3 pyproject | `version-two-packaging-port` | pending | not started | not run | Modern packaging. |
+| Phase 3 pyproject | `version-two-packaging-port` | pending | ready to commit | isolated `python -m build` CPU wheel passed | Added scikit-build-core `pyproject.toml`; legacy setup files kept tracked for now and excluded from sdist pending any later deletion decision. |
 | Phase 4 Python packages | `version-two-packaging-port` | pending | not started | not run | Convert modules to package dirs if approved. |
 | Phase 5 loader | `version-two-packaging-port` | pending | not started | not run | Resource-based shared-library loading. |
 | Phase 6 top CMake | `version-two-packaging-port` | pending | not started | not run | `LEAP_GPU` backend selection. |
@@ -602,11 +602,12 @@ Recommended default:
 
 ## Checklist
 
-- [ ] `pyproject.toml` added/adapted.
-- [ ] Legacy setup-file decision recorded.
-- [ ] User approval obtained if deleting/deprecating ambiguous setup files.
-- [ ] This document updated.
+- [x] `pyproject.toml` added/adapted for `version_two`, including flat Python modules and XRayPhysics/leapctserver modules.
+- [x] Legacy setup-file decision recorded: keep existing `setup.py`, `setup.cfg`, and setup helper scripts tracked for now; exclude them from the sdist so `pyproject.toml` is the packaging front end.
+- [x] User approval not needed for deletion because no legacy setup files are being deleted in this phase.
+- [x] This document updated.
 - [ ] Commit written.
+- [x] Validation: isolated CPU-only `python -m build` passed with `.wheelhouse/`, using `-Ccmake.define.CPUONLY=ON`; wheel contained flat Python modules plus `lib_cpu/libleapct_cpu.so`.
 
 ## Commit message
 
@@ -1102,8 +1103,12 @@ Result: `leapct-1.27.dev32+g7c5d55def-0-py3-none-linux_x86_64.whl` built success
 ## Version-two port validation
 
 ```text
-Not run yet.
+2026-08-04 Phase 3: Isolated Python package front-end CPU-only wheel validation passed using the local `.wheelhouse/`:
+  rm -rf /tmp/leap-phase3-wheel-cpu
+  PIP_NO_INDEX=1 PIP_FIND_LINKS=$PWD/.wheelhouse CC=/opt/rocm-6.4.3/bin/amdclang CXX=/opt/rocm-6.4.3/bin/amdclang++ CMAKE_PREFIX_PATH=/opt/rocm-6.4.3 .venv13/bin/python -m build --wheel --outdir /tmp/leap-phase3-wheel-cpu -Ccmake.define.CPUONLY=ON .
+Result: `leapct-1.27.dev9+g114070718.d20260804-0-py3-none-linux_x86_64.whl` built successfully. Wheel contents included flat Python modules (`leapctype.py`, `leaptorch.py`, `leap_filter_sequence.py`, `leap_preprocessing_algorithms.py`, `xrayphysics.py`, `leapctserver.py`) and `lib_cpu/libleapct_cpu.so`.
 ```
+
 
 ---
 
